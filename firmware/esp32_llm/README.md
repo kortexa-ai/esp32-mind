@@ -37,3 +37,9 @@ GENERATE <max_new_tokens> <token_id> [<token_id> ...]
 Generation starts after a `MIND BEGIN` line and ends with a `MIND END` line
 containing token count, wall time, and throughput. Prompts are limited to 96
 tokens, generation to 128 tokens, and total context to 256 tokens.
+
+The validated `xiao-model-v1` boot reports:
+
+```text
+MIND INFO vocab=16384 dim=96 layers=6 heads=4 ffn=64 ple=96 context=256 psram_free_kb=5294
+```

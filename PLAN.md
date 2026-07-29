@@ -2,11 +2,11 @@
 
 - [x] Inspect `slvDev/esp32-ai`, its license, and the connected XIAO.
 - [x] Create the private `kortexa-ai/esp32-mind` repository.
-- [ ] Size and train a TinyStories PLE model for 8 MB flash.
+- [x] Size and train a TinyStories PLE model for 8 MB flash.
 - [x] Add a USB serial prompt/response protocol and host client.
-- [ ] Build and flash the XIAO ESP32-S3.
-- [ ] Send a prompt over USB and capture an on-device response.
-- [ ] Document, validate, commit to `main`, and push.
+- [x] Build and flash the XIAO ESP32-S3.
+- [x] Send a prompt over USB and capture an on-device response.
+- [x] Document, validate, commit to `main`, and push.
 
 ## Constraints
 

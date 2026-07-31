@@ -112,6 +112,67 @@ Caution: diffusion meshes *worse* than the transformer. Bidirectional
 attention means boards must exchange K/V for all positions every step, so
 the 384-bytes-per-hop free lunch from the pipeline analysis disappears.
 
+## Combined: the writers' room
+
+The two ideas compose into something better than either alone. Four working
+boards, three roles:
+
+**Boards 1–3: the pipeline (the novelist).** The ~34M AR model split by
+layers as above. Board 1 keeps USB, the tokenizer, and — the key move —
+the current 11.5M model as the speculative drafter. Drafter and first
+stage share a board because the drafter runs between pipeline turns. With
+speculative decoding the big model verifies drafted blocks in pipelined
+prefill mode, landing back near 10–14 tok/s *on the 34M model*.
+
+**Board 4: the diffusion board (the editor).** Two jobs, both playing to
+diffusion's strengths instead of fighting its weakness:
+
+1. **Planner.** Before the novelist writes a word, board 4 denoises a
+   16–32 token story outline — a few seconds of compute — and the
+   pipeline generates conditioned on it. Bidirectional models are good at
+   global structure, AR models at fluent local text; this directly
+   attacks TinyStories' signature failure, locally-pretty prose whose
+   plot wanders off to buy cigarettes. The outline is short, so
+   diffusion's T× compute tax is levied on 30 tokens instead of 300.
+2. **Editor.** Infill on demand (`MIND EDIT`), plus self-healing: when
+   board 1 detects a repetition loop, it masks the offending span and
+   board 4 denoises a repair with both-side context. The AR mesh cannot
+   do this at any price.
+
+Wiring: UART ring for the pipeline (latency matters), ESP-NOW for the
+editor (it doesn't — edits are seconds-scale, and the word "mesh" becomes
+legally true).
+
+The demo flow is pure theater, every stage visible on one serial console:
+prompt → outline sharpens out of noise → story streams at full speed →
+editor visibly repairs a flagged sentence. Slow-and-visible where it's
+cool, fast where it counts.
+
+Two honest notes:
+
+- The research-flavored variant — diffusion as the speculative *drafter*,
+  drafting block N+1 while the pipeline verifies block N — is a real idea
+  in the literature, but the compute math above kills it on this silicon:
+  with no parallelism to hide T×, the tiny AR model drafts faster than
+  diffusion ever will. The intern types faster than the poet.
+- The one combo to avoid stays avoided: diffusion *across* the mesh.
+  Bidirectional attention means all-to-all K/V exchange every step; the
+  384-byte free lunch becomes a buffet we are catering.
+
+### Shopping list
+
+| Boards | What it buys |
+|---:|---|
+| 3 | Mesh only — the 34M pipeline, no editor |
+| 4 | The writers' room |
+| **5** | **Writers' room + spare — the recommendation** |
+| 8 | Two pipelines dueling best-of-2, editor, spare — the "go crazy" tier |
+
+Plain XIAO ESP32-S3 (no Sense; no camera sins yet), ~$8–10 each. The
+spare exists because one board always ends up sacrificed to the gods of
+lifted pads, and it ships with a known-good data-capable USB cable — see
+README on the rarity of that mineral.
+
 ## Verdict
 
 - Mesh: feasible, and unusually so — PLE plus tiny d_model makes the split
@@ -125,4 +186,5 @@ the 384-bytes-per-hop free lunch from the pipeline analysis disappears.
 
 Suggested order if this ever becomes real: best-of-3 sampling (weekend),
 pipeline split (the mesh), speculative decoding on top (the headline),
-diffusion arm (the sideshow).
+diffusion arm (the sideshow), then promote the diffusion board to
+planner/editor and call it the writers' room (the finale).
